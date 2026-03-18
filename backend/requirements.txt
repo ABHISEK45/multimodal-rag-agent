@@ -8,6 +8,6 @@ sentence-transformers
 scikit-learn
 pypdf
 pandas
-google-generativeai
+google-genai
 anthropic
 requests
