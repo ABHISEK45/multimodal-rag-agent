@@ -1,84 +1,96 @@
 import React, { useState } from "react";
+import "./App.css";
+
+const backend = "http://127.0.0.1:8000"; // change later for deployment
 
 function App() {
-
   const [file, setFile] = useState(null);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [provider, setProvider] = useState("gemini");
-
-  const backend = "http://127.0.0.1:8000";
+  const [loading, setLoading] = useState(false);
 
   const uploadFile = async () => {
-    if (!file) {
-      alert("Please select a file");
-      return;
-    }
+    if (!file) return alert("Select a file first");
 
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch(`${backend}/upload`, {
+    setLoading(true);
+
+    await fetch(`${backend}/upload`, {
       method: "POST",
-      body: formData
+      body: formData,
     });
 
-    const data = await res.json();
-    alert(data.message);
+    setLoading(false);
+    alert("Document uploaded!");
   };
 
   const askQuestion = async () => {
     if (!question) return;
 
-    const res = await fetch(
-      `${backend}/rag?question=${encodeURIComponent(question)}&provider=${provider}`
-    );
+    setLoading(true);
 
+    const res = await fetch(
+      `${backend}/rag?question=${question}&provider=${provider}`
+    );
     const data = await res.json();
+
     setAnswer(data.answer);
+    setLoading(false);
+  };
+
+  const clearDB = async () => {
+    await fetch(`${backend}/clear`, { method: "POST" });
+    alert("Database cleared!");
   };
 
   return (
-    <div style={{ padding: "40px", fontFamily: "Arial" }}>
-      <h1>Enterprise AI Copilot</h1>
+    <div className="container">
+      <h1>🧠 Multimodal RAG Agent</h1>
 
-      <h3>Upload Document</h3>
-      <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-      <button onClick={uploadFile}>Upload</button>
+      <div className="card">
+        <h2>📂 Upload Document</h2>
+        <input type="file" onChange={(e) => setFile(e.target.files[0])} />
+        <button onClick={uploadFile}>Upload</button>
+      </div>
 
-      <hr />
+      <div className="card">
+        <h2>💬 Ask Question</h2>
 
-      <h3>Ask Question</h3>
+        <select
+          value={provider}
+          onChange={(e) => setProvider(e.target.value)}
+        >
+          <option value="gemini">Gemini</option>
+          <option value="claude">Claude</option>
+          <option value="openai">OpenAI</option>
+          <option value="ollama">Ollama</option>
+        </select>
 
-      <label>Provider:</label>
-      <select
-        value={provider}
-        onChange={(e) => setProvider(e.target.value)}
-      >
-        <option value="gemini">Gemini</option>
-        <option value="claude">Claude</option>
-        <option value="openai">OpenAI</option>
-        <option value="ollama">Ollama</option>
-      </select>
+        <input
+          type="text"
+          placeholder="Ask something..."
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+        />
 
-      <br /><br />
+        <button onClick={askQuestion}>Ask</button>
+      </div>
 
-      <input
-        type="text"
-        placeholder="Ask something..."
-        value={question}
-        onChange={(e) => setQuestion(e.target.value)}
-        style={{ width: "400px", padding: "8px" }}
-      />
+      <div className="card">
+        <h2>🧾 Answer</h2>
+        {loading ? (
+          <p>⏳ Generating response...</p>
+        ) : (
+          <p>{answer}</p>
+        )}
+      </div>
 
-      <button onClick={askQuestion} style={{ marginLeft: "10px" }}>
-        Ask
+      <button className="clear-btn" onClick={clearDB}>
+        🗑 Clear Database
       </button>
-
-      <hr />
-
-      <h3>Answer</h3>
-      <p>{answer}</p>
     </div>
   );
 }
